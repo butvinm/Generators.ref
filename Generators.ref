@@ -64,28 +64,27 @@ $ENTRY Gen-Iter {
 
 /* Python-like range generator. Yields integers from s.Start to s.Stop with step s.Step.
 
-
 Usage:
   * Call without arguments will generate infinite sequence of integers starting from 0
-  = <Gen-Iter &Gen-Range> : (0 )(1 )(2 )(3 )(4 )(5 )(6 )(7 )(8 )(9 )...
+  = <Gen-Iter <Gen-Range>> : (0 )(1 )(2 )(3 )(4 )(5 )(6 )(7 )(8 )(9 )...
 
   * Call with start and stop values (macrodigits)
-  = <Gen-Iter &Gen-Range (3 10)>> : (3 )(4 )(5 )(6 )(7 )(8 )(9 )
+  = <Gen-Iter <Gen-Range 3 10>> : (3 )(4 )(5 )(6 )(7 )(8 )(9 )
 
   * Call with start, stop and step values. Start and stop is macrodigits, step is a number
-  = <Gen-Iter &Gen-Range (3 10 2)>> : (3 )(5 )(7 )(9 )
+  = <Gen-Iter <Gen-Range 3 10 2>> : (3 )(5 )(7 )(9 )
 
   * Call with start, stop and step values. All values are numbers
-  = <Gen-Iter &Gen-Range ((3 0) (10 0) 2)>> : (3 0 )(3 2 )(3 4 )(3 6 )(3 8 )
+  = <Gen-Iter <Gen-Range (1 0) (1 10) 2>> : (1 0)(1 2)(1 4)(1 6)(1 8)
 */
 $ENTRY Gen-Range {
-  = <Gen-Range ((0) (Inf) 1)>;
+  = <Gen-Range (0) (Inf) 1>;
 
-  (s.Start s.Stop) = <Gen-Range ((s.Start) (s.Stop) 1)>;
+  s.Start s.Stop = <Gen-Range (s.Start) (s.Stop) 1>;
 
-  (s.Start s.Stop s.Step) = <Gen-Range ((s.Start) (s.Stop) s.Step)>;
+  s.Start s.Stop s.Step = <Gen-Range (s.Start) (s.Stop) s.Step>;
 
-  ((e.Start) (e.Stop) e.Step)
+  (e.Start) (e.Stop) e.Step
     = {
       () = <Gen-RangeImpl ((e.Start) (e.Stop) e.Step)>;
       (e.Ctx) = <Gen-RangeImpl (e.Ctx)>;
@@ -113,7 +112,7 @@ Usage:
   = <Gen-Iter
     <Gen-TakeWhile
       { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
-      &Gen-Range (1 10)
+      <Gen-Range 1 10>
     >
   > : ((0 )(1 )(2 )(3 )(4 )
 */
@@ -127,6 +126,32 @@ $ENTRY Gen-TakeWhile {
             = <s.Pred e.Next> : {
               False = Gen-Stop;
               True = (e.NewCtx) e.Next;
+          };
+        };
+    };
+}
+
+
+/* Yields only values satisfying predicate.
+
+Usage:
+  = <Gen-Iter
+    <Gen-Filter
+      { e.Val = <Mod (e.Val) 2> : { 0 = True; e._ = False } }
+      <Gen-Range>
+    >
+  > : (5 )(6 )(7 )(8 )...
+*/
+$ENTRY Gen-Filter {
+  s.Pred s.Gen
+    = {
+      (e.Ctx)
+        = <s.Gen (e.Ctx)> : {
+          Gen-Stop = Gen-Stop;
+          (e.NewCtx) e.Next
+            = <s.Pred e.Next> : {
+              True = (e.NewCtx) e.Next;
+              False = <<Gen-Filter s.Pred s.Gen> (e.NewCtx)>;
           };
         };
     };

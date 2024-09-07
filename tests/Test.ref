@@ -47,6 +47,27 @@ FibBounded {
 }
 
 
+Invert {
+  s.Pred =
+    {
+      e.Val = <s.Pred e.Val> : { True = False; False = True; }
+    }
+}
+
+
+LessThan {
+  e.Bound
+    = {
+      e.Val = <Compare (e.Bound) e.Val> : { '+' = True; e._ = False; }
+    }
+}
+
+
+IsEven {
+  e.Val = <Mod (e.Val) 2> : { 0 = True; e._ = False; }
+}
+
+
 
 Test-Gen-Iter {
   = <Prout Test-Gen-Iter>
@@ -68,23 +89,23 @@ Test-Gen-Range {
       ((1) (Inf) 1) 0
     >
     <Assert
-      (<Gen-Iter <Gen-Range (0 5)>>)
+      (<Gen-Iter <Gen-Range 0 5>>)
       (0)(1)(2)(3)(4)
     >
     <Assert
-      (<Gen-Iter <Gen-Range (0 10 2)>>)
+      (<Gen-Iter <Gen-Range 0 10 2>>)
       (0)(2)(4)(6)(8)
     >
     <Assert
-      (<Gen-Iter <Gen-Range (3 10 2)>>)
+      (<Gen-Iter <Gen-Range 3 10 2>>)
       (3)(5)(7)(9)
     >
     <Assert
-      (<Gen-Iter <Gen-Range (3 10 3)>>)
+      (<Gen-Iter <Gen-Range 3 10 3>>)
       (3)(6)(9)
     >
     <Assert
-      (<Gen-Iter <Gen-Range ((1 0) (1 10) 1)>>)
+      (<Gen-Iter <Gen-Range (1 0) (1 10) 1>>)
       (1 0)(1 1)(1 2)(1 3)(1 4)(1 5)(1 6)(1 7)(1 8)(1 9)
     >
 }
@@ -95,7 +116,7 @@ Test-Gen-TakeWhile {
     <Assert
       (<Gen-Iter
         <Gen-TakeWhile
-          { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
+          <LessThan 5>
           <Gen-Range>
         >
       >)
@@ -104,10 +125,42 @@ Test-Gen-TakeWhile {
     <Assert
       (<Gen-Iter
         <Gen-TakeWhile
-          { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
-          <Gen-Range (0 3)>
+          <LessThan 5>
+          <Gen-Range 0 3>
         >
       >)
       (0)(1)(2)
+    >
+}
+
+
+Test-Gen-Filter {
+  = <Prout Test-Gen-Filter>
+    <Assert
+      (<Gen-Iter
+        <Gen-Filter
+          <LessThan 5>
+          <Gen-Range 0 10>
+        >
+      >)
+      (0)(1)(2)(3)(4)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Filter
+          <Invert <LessThan 5>>
+          <Gen-Range 0 10>
+        >
+      >)
+      (5)(6)(7)(8)(9)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Filter
+          &IsEven
+          <Gen-Range 0 10>
+        >
+      >)
+      (0)(2)(4)(6)(8)
     >
 }
