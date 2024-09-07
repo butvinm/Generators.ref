@@ -131,6 +131,31 @@ $ENTRY Gen-TakeWhile {
     };
 }
 
+/* Skips values while they satisfy predicate.
+
+Usage:
+  = <Gen-Iter
+    <Gen-DropWhile
+      { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
+      <Gen-Range 1 10>
+    >
+  > : ((5 )(6 )(7 )(8 )(9 )
+*/
+$ENTRY Gen-DropWhile {
+  s.Pred s.Gen
+    = {
+      (e.Ctx)
+        = <s.Gen (e.Ctx)> : {
+          Gen-Stop = Gen-Stop;
+          (e.NewCtx) e.Next
+            = <s.Pred e.Next> : {
+              False = (e.NewCtx) e.Next;
+              True = <<Gen-DropWhile s.Pred s.Gen> (e.NewCtx)>;
+          };
+        };
+    };
+}
+
 
 /* Yields only values satisfying predicate.
 
