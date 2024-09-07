@@ -1,0 +1,113 @@
+*$FROM Generators.ref
+$EXTERN Gen-Iter, Gen-Range, Gen-Filter, Gen-TakeWhile, Gen-Filter;
+
+
+*$FROM LibraryEx
+$EXTERN Map;
+
+
+$ENTRY Go {
+  = <Map
+    { Success = ; Fail = <Exit 1>; }
+    <Test-Gen-Iter>
+    <Test-Gen-Range>
+    <Test-Gen-TakeWhile>
+    <Test-Gen-Filter>
+  >
+}
+
+
+Assert {
+  (e.Expected) e.Expected
+    = <Prout '\x1b[32mSuccess\x1b[0m: ' (e.Expected ' == ' e.Expected)> :
+    = Success;
+  (e.Res) e.Expected
+    = <Prout '\x1b[31mFail\x1b[0m: ' (e.Res ' == ' e.Expected)> :
+    = Fail;
+}
+
+
+Fib {
+   = (1 1) 1;
+
+  (s.PP s.P)
+    = <Add s.PP s.P> : s.Next
+    = (s.P s.Next) s.Next;
+}
+
+
+FibBounded {
+  () = (1 1) 1;
+
+  (8 13) = Gen-Stop;
+
+  (s.PP s.P)
+    = <Add s.PP s.P> : s.Next
+    = (s.P s.Next) s.Next;
+}
+
+
+
+Test-Gen-Iter {
+  = <Prout Test-Gen-Iter>
+    <Assert
+      (<Gen-Iter &FibBounded>)
+      (1)(2)(3)(5)(8)(13)
+    >
+    <Assert
+      (<Gen-Iter &FibBounded (3 5)>)
+      (8)(13)
+    >
+}
+
+
+Test-Gen-Range {
+  = <Prout Test-Gen-Range>
+    <Assert
+      (<<Gen-Range> ()>)
+      ((1) (Inf) 1) 0
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range (0 5)>>)
+      (0)(1)(2)(3)(4)
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range (0 10 2)>>)
+      (0)(2)(4)(6)(8)
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range (3 10 2)>>)
+      (3)(5)(7)(9)
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range (3 10 3)>>)
+      (3)(6)(9)
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range ((1 0) (1 10) 1)>>)
+      (1 0)(1 1)(1 2)(1 3)(1 4)(1 5)(1 6)(1 7)(1 8)(1 9)
+    >
+}
+
+
+Test-Gen-TakeWhile {
+  = <Prout Test-Gen-TakeWhile>
+    <Assert
+      (<Gen-Iter
+        <Gen-TakeWhile
+          { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
+          <Gen-Range>
+        >
+      >)
+      (0)(1)(2)(3)(4)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-TakeWhile
+          { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
+          <Gen-Range (0 3)>
+        >
+      >)
+      (0)(1)(2)
+    >
+}

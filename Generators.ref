@@ -1,0 +1,133 @@
+/* The MIT License (MIT)
+
+Copyright © 2024 Mikhail Butvin
+
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+
+/* Generator abstraction and utils for Refal 5 Lambda.
+
+Generator function interface:
+
+  MyGenerator {
+    () = t.InitCtx t.Next;
+    t.Ctx = t.NewCtx t.Next;
+    t.Ctx = Gen-Stop;
+  }
+
+Example:
+
+  Fib {
+    () = (1 1) 1;
+    (8 13) = Gen-Stop;
+    (s.PP s.P)
+      = <Add s.PP s.P> : s.Next
+      = (s.P s.Next) s.Next;
+  }
+*/
+
+
+/* Expands generator to an object expression.
+
+Usage:
+  = <Gen-Iter &Fib> : 1 1 2 3 5 8 13
+  = <Gen-Iter &Fib (3 5)> : 8 13
+*/
+$ENTRY Gen-Iter {
+  s.Gen = <Gen-Iter s.Gen ()>;
+
+  s.Gen (e.Ctx)
+    = <s.Gen (e.Ctx)> : {
+      Gen-Stop = ;
+      (e.NewCtx) e.Next = (e.Next) <Gen-Iter s.Gen (e.NewCtx)>;
+    };
+}
+
+
+/* Python-like range generator. Yields integers from s.Start to s.Stop with step s.Step.
+
+
+Usage:
+  * Call without arguments will generate infinite sequence of integers starting from 0
+  = <Gen-Iter &Gen-Range> : (0 )(1 )(2 )(3 )(4 )(5 )(6 )(7 )(8 )(9 )...
+
+  * Call with start and stop values (macrodigits)
+  = <Gen-Iter &Gen-Range (3 10)>> : (3 )(4 )(5 )(6 )(7 )(8 )(9 )
+
+  * Call with start, stop and step values. Start and stop is macrodigits, step is a number
+  = <Gen-Iter &Gen-Range (3 10 2)>> : (3 )(5 )(7 )(9 )
+
+  * Call with start, stop and step values. All values are numbers
+  = <Gen-Iter &Gen-Range ((3 0) (10 0) 2)>> : (3 0 )(3 2 )(3 4 )(3 6 )(3 8 )
+*/
+$ENTRY Gen-Range {
+  = <Gen-Range ((0) (Inf) 1)>;
+
+  (s.Start s.Stop) = <Gen-Range ((s.Start) (s.Stop) 1)>;
+
+  (s.Start s.Stop s.Step) = <Gen-Range ((s.Start) (s.Stop) s.Step)>;
+
+  ((e.Start) (e.Stop) e.Step)
+    = {
+      () = <Gen-RangeImpl ((e.Start) (e.Stop) e.Step)>;
+      (e.Ctx) = <Gen-RangeImpl (e.Ctx)>;
+    };
+}
+
+
+Gen-RangeImpl {
+  ((e.Start) (Inf) e.Step)
+    = <Add (e.Start) e.Step> : e.Next
+    = ((e.Next) (Inf) e.Step) e.Start;
+
+  ((e.Start) (e.Stop) e.Step)
+    = <Add (e.Start) e.Step> : e.Next
+    = <Compare (e.Start) e.Stop> : {
+      '-' = ((e.Next) (e.Stop) e.Step) e.Start;
+      e._ = Gen-Stop;
+    };
+}
+
+
+/* Yields while values satisfy predicate.
+
+Usage:
+  = <Gen-Iter
+    <Gen-TakeWhile
+      { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
+      &Gen-Range (1 10)
+    >
+  > : ((0 )(1 )(2 )(3 )(4 )
+*/
+$ENTRY Gen-TakeWhile {
+  s.Pred s.Gen
+    = {
+      (e.Ctx)
+        = <s.Gen (e.Ctx)> : {
+          Gen-Stop = Gen-Stop;
+          (e.NewCtx) e.Next
+            = <s.Pred e.Next> : {
+              False = Gen-Stop;
+              True = (e.NewCtx) e.Next;
+          };
+        };
+    };
+}
