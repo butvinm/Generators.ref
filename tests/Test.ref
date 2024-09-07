@@ -1,5 +1,5 @@
 *$FROM Generators.ref
-$EXTERN Gen-Iter, Gen-Range, Gen-Filter, Gen-TakeWhile, Gen-Filter, Gen-DropWhile;
+$EXTERN Gen-Iter, Gen-Range, Gen-Filter, Gen-TakeWhile, Gen-Filter, Gen-DropWhile, Gen-Chain;
 
 
 *$FROM LibraryEx
@@ -14,6 +14,7 @@ $ENTRY Go {
     <Test-Gen-TakeWhile>
     <Test-Gen-Filter>
     <Test-Gen-DropWhile>
+    <Test-Gen-Chain>
   >
 }
 
@@ -185,5 +186,29 @@ Test-Gen-DropWhile {
           <Gen-Range 0 3>
         >
       >)
+    >
+}
+
+
+Test-Gen-Chain {
+  = <Prout Test-Gen-Chain>
+    <Assert
+      (<Gen-Iter
+        <Gen-Chain
+          <Gen-Range 0 5>
+          <Gen-Range 5 10>
+          <Gen-Range 10 15>
+        >
+      >)
+      (0)(1)(2)(3)(4)(5)(6)(7)(8)(9)(10)(11)(12)(13)(14)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Chain
+          <Gen-Filter &IsEven <Gen-Range 0 5>>
+          <Gen-Filter <Invert &IsEven> <Gen-Range 5 10>>
+        >
+      >)
+      (0)(2)(4)(5)(7)(9)
     >
 }

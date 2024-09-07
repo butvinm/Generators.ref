@@ -181,3 +181,34 @@ $ENTRY Gen-Filter {
         };
     };
 }
+
+
+/* Yields values from two generators sequentially.
+
+Usage:
+  = <Gen-Iter
+    <Gen-Chain
+      <Gen-Range 1 5>
+      <Gen-Range 6 10>
+      <Gen-Range 11 15>
+    >
+  > : (1 )(2 )(3 )(4 )(5 )(6 )(7 )(8 )(9 )(10 )(11 )(12 )(13 )(14 )(15 )
+*/
+$ENTRY Gen-Chain {
+  = { (e.Ctx) = Gen-Stop };
+
+  e.Gens
+    = {
+      ()
+        = e.Gens : s.Gen e.Rest
+        = <s.Gen ()> : (e.NewCtx) e.Next
+        = ((e.NewCtx) e.Gens) e.Next;
+
+      ((e.Ctx) e.Gens^)
+        = e.Gens : s.Gen e.Rest
+        = <s.Gen (e.Ctx)> : {
+          Gen-Stop = <<Gen-Chain e.Rest> ()>;
+          (e.NewCtx) e.Next = ((e.NewCtx) e.Gens) e.Next;
+        };
+    }
+}
