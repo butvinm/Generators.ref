@@ -1,6 +1,6 @@
 # Generators library for [Refal-5λ](https://github.com/bmstu-iu9/refal-5-lambda)
 
-> [Русская версия](./README.md)
+> [Русская версия](./README.ru.md)
 
 ## Installation
 
