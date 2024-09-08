@@ -2,65 +2,52 @@
 
 > [Русская версия](./README.md)
 
-## Features
+## Installation
 
-### Generator interface
+Just copy the `Generators.ref` file to your project or include part of it directly in your code.
 
-Generator is any function that takes context and returns an updatable context and a value.
+## Usage
 
+Generator is any function that accepts a context and returns an updated context and a value or `Gen-Stop` if the generator is exhausted.
+
+To initialize a generator it should be called with an empty context.
+
+For example, lets define Fibonacci numbers generator (assume macrodigits for simplicity):
 ```refal
-BoundedFib {
+Fib {
   () = (1 1) 1;
-  (8 13) = Gen-Stop;
-  (s.PP s.P)
-    = <Add s.PP s.P> : s.Next
-    = (s.P s.Next) s.Next;
+  (13 21) = Gen-Stop;
+  (s.PP s.P) = <Add s.PP s.P> : s.Next = (s.P s.Next) s.Next;
 }
 ```
 
-### Functions
+Some functions accept predicates as arguments. Predicate functions accept single object expression and should return either `True` or `False`.
 
-`Gen-Iter`
-
-Expands generator to an object expression.
-
+For example:
 ```refal
-= <Gen-Iter &Fib> : 1 1 2 3 5 8 13
-= <Gen-Iter &Fib (3 5)> : 8 13
+IsEven {
+  e.Val = <Mod (e.Val) 2> : { 0 = True; e._ = False; }
+}
 ```
 
-
-`Gen-Range`
-
-Python-like range generator. Yields integers from s.Start to s.Stop with step s.Step.
-
+Most of the functions return a new generator so you can chain them together. When all operations are done you can use `Gen-Iter` to iterate over the generator and get the object expression.
 
 ```refal
-* Call without arguments will generate infinite sequence of integers starting from 0
-= <Gen-Iter &Gen-Range> : (0 )(1 )(2 )(3 )(4 )(5 )(6 )(7 )(8 )(9 )...
+*$FROM Generators.ref
+$EXTERN Gen-Iter, Gen-Range, Gen-Filter, Gen-TakeWhile, Gen-Filter, Gen-DropWhile, Gen-Chain, Gen-Map, Gen-Reduce;
 
-* Call with start and stop values (macrodigits)
-= <Gen-Iter &Gen-Range (3 10)>> : (3 )(4 )(5 )(6 )(7 )(8 )(9 )
-
-* Call with start, stop and step values. Start and stop is macrodigits, step is a number
-= <Gen-Iter &Gen-Range (3 10 2)>> : (3 )(5 )(7 )(9 )
-
-* Call with start, stop and step values. All values are numbers
-= <Gen-Iter &Gen-Range ((3 0) (10 0) 2)>> : (3 0 )(3 2 )(3 4 )(3 6 )(3 8 )
+$ENTRY Go {
+    = <Gen-Iter <Gen-Range 0 10 2>> : (0 )(2 )(4 )(6 )(8 )
+    = <Gen-Iter <Gen-TakeWhile <LessThan 5> <Gen-Range 0 10>>> : (0 )(1 )(2 )(3 )(4 )
+    = <Gen-Iter <Gen-Filter &IsEven <Gen-Range 0 10>>> : (0 )(2 )(4 )(6 )(8 )
+    = <Gen-Iter <Gen-Chain <Gen-Range 0 2> <Gen-Range 2 3> <Gen-Range 3 5>>> : (0 )(1 )(2 )(3 )(4 )
+    = <Gen-Iter <Gen-Map { e.Val = <Mul 3 e.Val> } <Gen-Range 0 5>>> : (0 )(3 )(6 )(9 )(12 )
+    = <Gen-Reduce &Add 0 <Gen-Range 0 5>> : 10
+    = Done
+}
 ```
 
-`Gen-TakeWhile`
-
-Yields while values satisfy predicate.
-
-```refal
-= <Gen-Iter
-    <Gen-TakeWhile
-      { e.Val = <Compare 5 e.Val> : { '+' = True; e._ = False } }
-      &Gen-Range (1 10)
-    >
-  > : ((0 )(1 )(2 )(3 )(4 )
-```
+For more examples see [tests](./tests/) and documentation in the [Generators.ref](./Generators.ref) file.
 
 
 ## Roadmap
@@ -68,8 +55,10 @@ Yields while values satisfy predicate.
 - [x] Iter
 - [x] Range
 - [x] TakeWhile
-- [ ] DropWhile
-- [ ] Filter
-- [ ] Map
-- [ ] Reduce
+- [x] DropWhile
+- [x] Filter
+- [x] Chain
+- [x] Map
+- [x] Reduce
 - [ ] MapAccum
+- [ ] Batched
