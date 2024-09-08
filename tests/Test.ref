@@ -1,5 +1,14 @@
 *$FROM Generators.ref
-$EXTERN Gen-Iter, Gen-Range, Gen-Filter, Gen-TakeWhile, Gen-Filter, Gen-DropWhile, Gen-Chain;
+$EXTERN
+  Gen-Iter,
+  Gen-Range,
+  Gen-Filter,
+  Gen-TakeWhile,
+  Gen-Filter,
+  Gen-DropWhile,
+  Gen-Chain,
+  Gen-Map,
+  Gen-Reduce;
 
 
 *$FROM LibraryEx
@@ -15,6 +24,8 @@ $ENTRY Go {
     <Test-Gen-Filter>
     <Test-Gen-DropWhile>
     <Test-Gen-Chain>
+    <Test-Gen-Map>
+    <Test-Gen-Reduce>
   >
 }
 
@@ -210,5 +221,64 @@ Test-Gen-Chain {
         >
       >)
       (0)(2)(4)(5)(7)(9)
+    >
+}
+
+
+Test-Gen-Map {
+  = <Prout Test-Gen-Map>
+    <Assert
+      (<Gen-Iter
+        <Gen-Map
+          { e.Val = <Mul 3 e.Val> }
+          <Gen-Range 0 5>
+        >
+      >)
+      (0)(3)(6)(9)(12)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Map
+          { e.Val = <Mul 3 e.Val> }
+          <Gen-Range 0 0>
+        >
+      >)
+    >
+}
+
+
+Test-Gen-Reduce {
+  = <Prout Test-Gen-Reduce>
+    <Assert
+      (<Gen-Reduce
+        &Add
+        0
+        <Gen-Range 0 5>
+      >)
+      10
+    >
+    <Assert
+      (<Gen-Reduce
+        &Add
+        5
+        <Gen-Range 0 5>
+      >)
+      15
+    >
+    <Assert
+      (<Gen-Reduce
+        &Add
+        0
+        <Gen-Range 0 0>
+      >)
+      0
+    >
+    <Assert
+      (<Gen-Reduce
+        { (e.Acc) e.Val = e.Acc e.Val }
+        42 69
+        <Gen-Range 0 5>
+      >)
+      42 69 0 1 2 3 4
     >
 }

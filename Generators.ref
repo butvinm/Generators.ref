@@ -212,3 +212,51 @@ $ENTRY Gen-Chain {
         };
     }
 }
+
+
+/* Map generator values with a function.
+
+Usage:
+  = <Gen-Iter
+    <Gen-Map
+      &Inc
+      <Gen-Range 1 5>
+    >
+  > : (2 )(3 )(4 )(5 )(6 )
+*/
+$ENTRY Gen-Map {
+  s.F s.Gen
+    = {
+      (e.Ctx)
+        = <s.Gen (e.Ctx)> : {
+          Gen-Stop = Gen-Stop;
+          (e.NewCtx) e.Next = (e.NewCtx) <s.F e.Next>;
+        };
+    };
+}
+
+
+/* Reduce generator values with a function.
+
+Usage:
+  = <Gen-Iter
+    <Gen-Reduce
+      &Add
+      0
+      <Gen-Range 1 5>
+    >
+*/
+$ENTRY Gen-Reduce {
+  s.F e.Acc s.Gen = <Gen-DoReduce s.F (e.Acc) s.Gen ()>;
+}
+
+
+Gen-DoReduce {
+  s.F (e.Acc) s.Gen (e.Ctx)
+    = <s.Gen (e.Ctx)> : {
+      Gen-Stop = e.Acc;
+      (e.NewCtx) e.Next
+        = <s.F (e.Acc) e.Next> : e.NewAcc
+        = <Gen-DoReduce s.F (e.NewAcc) s.Gen (e.NewCtx)>;
+    };
+}
