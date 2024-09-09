@@ -26,7 +26,8 @@ Fib {
 Например:
 ```refal
 IsEven {
-  e.Val = <Mod (e.Val) 2> : { 0 = True; e._ = False; }
+  e.Val, <Mod (e.Val) 2> : 0 = True;
+  e._ = False;
 }
 ```
 
