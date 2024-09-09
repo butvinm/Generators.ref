@@ -26,7 +26,8 @@ Some functions accept predicates as arguments. Predicate functions accept single
 For example:
 ```refal
 IsEven {
-  e.Val = <Mod (e.Val) 2> : { 0 = True; e._ = False; }
+  e.Val, <Mod (e.Val) 2> : 0 = True;
+  e._ = False;
 }
 ```
 
