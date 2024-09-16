@@ -50,13 +50,13 @@ Fib {
 
 
 FibBounded {
-  () = (1 1) 1;
+  s.Bound () = (1 1) 1;
 
-  (8 13) = Gen-Stop;
-
-  (s.PP s.P)
+  s.Bound (s.PP s.P), <Compare s.Bound s.P> : '+'
     = <Add s.PP s.P> : s.Next
     = (s.P s.Next) s.Next;
+
+  s.Bound (s.PP s.P) = Gen-Stop;
 }
 
 
@@ -85,12 +85,12 @@ IsEven {
 Test-Gen-Iter {
   = <Prout Test-Gen-Iter>
     <Assert
-      (<Gen-Iter &FibBounded>)
+      (<Gen-Iter (&FibBounded 13)>)
       (1)(2)(3)(5)(8)(13)
     >
     <Assert
-      (<Gen-Iter &FibBounded (3 5)>)
-      (8)(13)
+      (<Gen-Iter (&FibBounded 21) (3 5)>)
+      (8)(13)(21)
     >
 }
 

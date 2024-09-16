@@ -44,6 +44,9 @@ Example:
   }
 */
 
+*$FROM LibraryEx
+$EXTERN Apply;
+
 
 /* Expands generator to an object expression.
 
@@ -52,12 +55,12 @@ Usage:
   = <Gen-Iter &Fib (3 5)> : 8 13
 */
 $ENTRY Gen-Iter {
-  s.Gen = <Gen-Iter s.Gen ()>;
+  t.Gen = <Gen-Iter t.Gen ()>;
 
-  s.Gen (e.Ctx)
-    = <s.Gen (e.Ctx)> : {
+  t.Gen (e.Ctx)
+    = <Apply t.Gen (e.Ctx)> : {
       Gen-Stop = ;
-      (e.NewCtx) e.Next = (e.Next) <Gen-Iter s.Gen (e.NewCtx)>;
+      (e.NewCtx) e.Next = (e.Next) <Gen-Iter t.Gen (e.NewCtx)>;
     };
 }
 
@@ -117,13 +120,13 @@ Usage:
   > : ((0 )(1 )(2 )(3 )(4 )
 */
 $ENTRY Gen-TakeWhile {
-  s.Pred s.Gen
+  t.Pred t.Gen
     = {
       (e.Ctx)
-        = <s.Gen (e.Ctx)> : {
+        = <Apply t.Gen (e.Ctx)> : {
           Gen-Stop = Gen-Stop;
           (e.NewCtx) e.Next
-            = <s.Pred e.Next> : {
+            = <Apply t.Pred e.Next> : {
               False = Gen-Stop;
               True = (e.NewCtx) e.Next;
           };
@@ -142,15 +145,15 @@ Usage:
   > : ((5 )(6 )(7 )(8 )(9 )
 */
 $ENTRY Gen-DropWhile {
-  s.Pred s.Gen
+  t.Pred t.Gen
     = {
       (e.Ctx)
-        = <s.Gen (e.Ctx)> : {
+        = <Apply t.Gen (e.Ctx)> : {
           Gen-Stop = Gen-Stop;
           (e.NewCtx) e.Next
-            = <s.Pred e.Next> : {
+            = <Apply t.Pred e.Next> : {
               False = (e.NewCtx) e.Next;
-              True = <<Gen-DropWhile s.Pred s.Gen> (e.NewCtx)>;
+              True = <<Gen-DropWhile t.Pred t.Gen> (e.NewCtx)>;
           };
         };
     };
@@ -168,15 +171,15 @@ Usage:
   > : (5 )(6 )(7 )(8 )...
 */
 $ENTRY Gen-Filter {
-  s.Pred s.Gen
+  t.Pred t.Gen
     = {
       (e.Ctx)
-        = <s.Gen (e.Ctx)> : {
+        = <Apply t.Gen (e.Ctx)> : {
           Gen-Stop = Gen-Stop;
           (e.NewCtx) e.Next
-            = <s.Pred e.Next> : {
+            = <Apply t.Pred e.Next> : {
               True = (e.NewCtx) e.Next;
-              False = <<Gen-Filter s.Pred s.Gen> (e.NewCtx)>;
+              False = <<Gen-Filter t.Pred t.Gen> (e.NewCtx)>;
           };
         };
     };
@@ -200,13 +203,13 @@ $ENTRY Gen-Chain {
   e.Gens
     = {
       ()
-        = e.Gens : s.Gen e.Rest
-        = <s.Gen ()> : (e.NewCtx) e.Next
+        = e.Gens : t.Gen e.Rest
+        = <Apply t.Gen ()> : (e.NewCtx) e.Next
         = ((e.NewCtx) e.Gens) e.Next;
 
       ((e.Ctx) e.Gens^)
-        = e.Gens : s.Gen e.Rest
-        = <s.Gen (e.Ctx)> : {
+        = e.Gens : t.Gen e.Rest
+        = <Apply t.Gen (e.Ctx)> : {
           Gen-Stop = <<Gen-Chain e.Rest> ()>;
           (e.NewCtx) e.Next = ((e.NewCtx) e.Gens) e.Next;
         };
@@ -225,10 +228,10 @@ Usage:
   > : (2 )(3 )(4 )(5 )(6 )
 */
 $ENTRY Gen-Map {
-  s.F s.Gen
+  s.F t.Gen
     = {
       (e.Ctx)
-        = <s.Gen (e.Ctx)> : {
+        = <Apply t.Gen (e.Ctx)> : {
           Gen-Stop = Gen-Stop;
           (e.NewCtx) e.Next = (e.NewCtx) <s.F e.Next>;
         };
@@ -247,16 +250,16 @@ Usage:
     >
 */
 $ENTRY Gen-Reduce {
-  s.F e.Acc s.Gen = <Gen-DoReduce s.F (e.Acc) s.Gen ()>;
+  s.F e.Acc t.Gen = <Gen-DoReduce s.F (e.Acc) t.Gen ()>;
 }
 
 
 Gen-DoReduce {
-  s.F (e.Acc) s.Gen (e.Ctx)
-    = <s.Gen (e.Ctx)> : {
+  s.F (e.Acc) t.Gen (e.Ctx)
+    = <Apply t.Gen (e.Ctx)> : {
       Gen-Stop = e.Acc;
       (e.NewCtx) e.Next
         = <s.F (e.Acc) e.Next> : e.NewAcc
-        = <Gen-DoReduce s.F (e.NewAcc) s.Gen (e.NewCtx)>;
+        = <Gen-DoReduce s.F (e.NewAcc) t.Gen (e.NewCtx)>;
     };
 }
