@@ -8,11 +8,12 @@ $EXTERN
   Gen-DropWhile,
   Gen-Chain,
   Gen-Map,
-  Gen-Reduce;
+  Gen-Reduce,
+  Gen-Pipe;
 
 
 *$FROM LibraryEx
-$EXTERN Map;
+$EXTERN Map, Inc, Fetch;
 
 
 $ENTRY Go {
@@ -26,6 +27,7 @@ $ENTRY Go {
     <Test-Gen-Chain>
     <Test-Gen-Map>
     <Test-Gen-Reduce>
+    <Test-Gen-Pipe>
   >
 }
 
@@ -281,4 +283,41 @@ Test-Gen-Reduce {
       >)
       42 69 0 1 2 3 4
     >
+}
+
+
+Test-Gen-Pipe {
+  = <Prout Test-Gen-Pipe>
+    <Assert
+      (<Gen-Iter <Fetch <Gen-Pipe>>>)
+      () /* yet cannot consider should Gen-Iter wrap an empty result */
+    >
+    <Assert
+      (<Gen-Iter
+        <Fetch
+          <Gen-Pipe
+            { = <Gen-Range 1 3> }
+            { t.A = <Gen-Map { t.B = t.A t.B} <Gen-Range <Inc t.A> 4>> }
+            { t.A t.B = <Gen-Map { t.C = t.A t.B t.C} <Gen-Range <Inc t.B> 5>> }
+          >
+        >
+      >)
+      (1 2 3 )(1 2 4 )(1 3 4 )(2 3 4 )
+    >
+    <Assert
+      (<Gen-Iter
+        <Fetch
+          <Gen-Pipe
+            <Gen-Pipe>
+            <Gen-Pipe { = <Gen-Range 1 3> }>
+            <Gen-Pipe>
+            <Gen-Pipe { t.A = <Gen-Map { t.B = t.A t.B} <Gen-Range <Inc t.A> 4>> }>
+            <Gen-Pipe>
+            <Gen-Pipe { t.A t.B = <Gen-Map { t.C = t.A t.B t.C} <Gen-Range <Inc t.B> 5>> }>
+            <Gen-Pipe>
+          >
+        >
+      >)
+      (1 2 3 )(1 2 4 )(1 3 4 )(2 3 4 )
+    >;
 }

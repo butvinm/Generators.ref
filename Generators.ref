@@ -57,13 +57,17 @@ Usage:
 $ENTRY Gen-Iter {
   t.Gen = <Gen-Iter t.Gen ()>;
 
-  t.Gen (e.Ctx)
-    = <Apply t.Gen (e.Ctx)> : {
+  t.Gen t.Ctx
+    = <Apply t.Gen t.Ctx> : {
       Gen-Stop = ;
-      (e.NewCtx) e.Next = (e.Next) <Gen-Iter t.Gen (e.NewCtx)>;
+      t.NewCtx e.Next = (e.Next) <Gen-Iter t.Gen t.NewCtx>;
     };
 }
 
+/* Auxiliary empty generator. */
+$ENTRY Gen-Empty {
+  = { t.Ctx = Gen-Stop };
+}
 
 /* Python-like range generator. Yields integers from s.Start to s.Stop with step s.Step.
 
@@ -90,7 +94,7 @@ $ENTRY Gen-Range {
   (e.Start) (e.Stop) e.Step
     = {
       () = <Gen-RangeImpl ((e.Start) (e.Stop) e.Step)>;
-      (e.Ctx) = <Gen-RangeImpl (e.Ctx)>;
+      t.Ctx = <Gen-RangeImpl t.Ctx>;
     };
 }
 
@@ -122,13 +126,13 @@ Usage:
 $ENTRY Gen-TakeWhile {
   t.Pred t.Gen
     = {
-      (e.Ctx)
-        = <Apply t.Gen (e.Ctx)> : {
+      t.Ctx
+        = <Apply t.Gen t.Ctx> : {
           Gen-Stop = Gen-Stop;
-          (e.NewCtx) e.Next
+          t.NewCtx e.Next
             = <Apply t.Pred e.Next> : {
               False = Gen-Stop;
-              True = (e.NewCtx) e.Next;
+              True = t.NewCtx e.Next;
           };
         };
     };
@@ -147,13 +151,13 @@ Usage:
 $ENTRY Gen-DropWhile {
   t.Pred t.Gen
     = {
-      (e.Ctx)
-        = <Apply t.Gen (e.Ctx)> : {
+      t.Ctx
+        = <Apply t.Gen t.Ctx> : {
           Gen-Stop = Gen-Stop;
-          (e.NewCtx) e.Next
+          t.NewCtx e.Next
             = <Apply t.Pred e.Next> : {
-              False = (e.NewCtx) e.Next;
-              True = <<Gen-DropWhile t.Pred t.Gen> (e.NewCtx)>;
+              False = t.NewCtx e.Next;
+              True = <<Gen-DropWhile t.Pred t.Gen> t.NewCtx>;
           };
         };
     };
@@ -173,13 +177,13 @@ Usage:
 $ENTRY Gen-Filter {
   t.Pred t.Gen
     = {
-      (e.Ctx)
-        = <Apply t.Gen (e.Ctx)> : {
+      t.Ctx
+        = <Apply t.Gen t.Ctx> : {
           Gen-Stop = Gen-Stop;
-          (e.NewCtx) e.Next
+          t.NewCtx e.Next
             = <Apply t.Pred e.Next> : {
-              True = (e.NewCtx) e.Next;
-              False = <<Gen-Filter t.Pred t.Gen> (e.NewCtx)>;
+              True = t.NewCtx e.Next;
+              False = <<Gen-Filter t.Pred t.Gen> t.NewCtx>;
           };
         };
     };
@@ -198,20 +202,20 @@ Usage:
   > : (1 )(2 )(3 )(4 )(5 )(6 )(7 )(8 )(9 )(10 )(11 )(12 )(13 )(14 )(15 )
 */
 $ENTRY Gen-Chain {
-  = { (e.Ctx) = Gen-Stop };
+  = <Gen-Empty>;
 
   e.Gens
     = {
       ()
         = e.Gens : t.Gen e.Rest
-        = <Apply t.Gen ()> : (e.NewCtx) e.Next
-        = ((e.NewCtx) e.Gens) e.Next;
+        = <Apply t.Gen ()> : t.NewCtx e.Next
+        = (t.NewCtx e.Gens) e.Next;
 
-      ((e.Ctx) e.Gens^)
+      (t.Ctx e.Gens^)
         = e.Gens : t.Gen e.Rest
-        = <Apply t.Gen (e.Ctx)> : {
+        = <Apply t.Gen t.Ctx> : {
           Gen-Stop = <<Gen-Chain e.Rest> ()>;
-          (e.NewCtx) e.Next = ((e.NewCtx) e.Gens) e.Next;
+          t.NewCtx e.Next = (t.NewCtx e.Gens) e.Next;
         };
     }
 }
@@ -230,10 +234,10 @@ Usage:
 $ENTRY Gen-Map {
   s.F t.Gen
     = {
-      (e.Ctx)
-        = <Apply t.Gen (e.Ctx)> : {
+      t.Ctx
+        = <Apply t.Gen t.Ctx> : {
           Gen-Stop = Gen-Stop;
-          (e.NewCtx) e.Next = (e.NewCtx) <s.F e.Next>;
+          t.NewCtx e.Next = t.NewCtx <s.F e.Next>;
         };
     };
 }
@@ -255,11 +259,84 @@ $ENTRY Gen-Reduce {
 
 
 Gen-DoReduce {
-  s.F (e.Acc) t.Gen (e.Ctx)
-    = <Apply t.Gen (e.Ctx)> : {
+  s.F (e.Acc) t.Gen t.Ctx
+    = <Apply t.Gen t.Ctx> : {
       Gen-Stop = e.Acc;
-      (e.NewCtx) e.Next
+      t.NewCtx e.Next
         = <s.F (e.Acc) e.Next> : e.NewAcc
-        = <Gen-DoReduce s.F (e.NewAcc) t.Gen (e.NewCtx)>;
+        = <Gen-DoReduce s.F (e.NewAcc) t.Gen t.NewCtx>;
+    };
+}
+
+
+/* Compose several generators by passing values from one to another.
+
+Each argument is a function that takes a result of the previous generator and returns a new generator.
+Argument for the first function is provided by the caller.
+
+Usage:
+  = <Gen-Iter
+    <Fetch
+      1
+      <Gen-Pipe
+        { t.S = <Gen-Range t.S 3>}
+        { t.A = <Gen-Map { t.B = t.A t.B} <Gen-Range <Inc t.A> 4>> }
+        { t.A t.B = <Gen-Map { t.C = t.A t.B t.C} <Gen-Range <Inc t.B> 5>> }
+      >
+  > : (1 2 3) (1 2 4) (1 3 4) (2 3 4)
+*/
+$ENTRY Gen-Pipe {
+  /* empty */
+    = {
+      e.V = {
+        () = (Gen-Stop) e.V;
+        (Gen-Stop) = Gen-Stop;
+      }
+    };
+
+  t.GenFn e.GenFns
+    = {
+      e.Args
+        = <Apply t.GenFn e.Args> : t.FirstGen
+        = <Gen-DoPipe t.FirstGen e.GenFns>;
+    };
+}
+
+
+/*
+Dear me from the future, please refactor this function or better kill it so it won't suffer anymore.
+*/
+Gen-DoPipe {
+  t.FirstGen = t.FirstGen;
+
+  t.FirstGen t.GenFn e.GenFns
+    = {
+      ()
+        = <Apply t.FirstGen ()> : {
+          Gen-Stop = Gen-Stop;
+          t.Ctx e.Next
+            = <Apply t.GenFn e.Next> : t.FollowGen
+            = <Gen-DoPipe t.FollowGen e.GenFns> : t.FollowGen^
+            = <Apply t.FollowGen ()> : {
+              Gen-Stop
+                = <Gen-DoPipe t.FirstGen t.GenFn e.GenFns> : t.FirstGenPiped
+                = <Apply t.FirstGenPiped (t.Ctx ())>;
+              t.NewFollowCtx e.FollowNext = (() t.NewFollowCtx) e.FollowNext;
+            };
+        };
+
+      (t.Ctx t.FollowCtx)
+        = <Apply t.FirstGen t.Ctx> : {
+          Gen-Stop = Gen-Stop;
+          t.NewCtx e.Next
+            = <Apply t.GenFn e.Next> : t.FollowGen
+            = <Gen-DoPipe t.FollowGen e.GenFns> : t.FollowGen^
+            = <Apply t.FollowGen t.FollowCtx> : {
+              Gen-Stop
+                = <Gen-DoPipe t.FirstGen t.GenFn e.GenFns> : t.FirstGenPiped
+                = <Apply t.FirstGenPiped (t.NewCtx ())>;
+              t.NewFollowCtx e.FollowNext = (t.Ctx t.NewFollowCtx) e.FollowNext;
+            };
+        };
     };
 }

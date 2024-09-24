@@ -44,6 +44,15 @@ $ENTRY Go {
     = <Gen-Iter <Gen-Chain <Gen-Range 0 2> <Gen-Range 2 3> <Gen-Range 3 5>>> : (0 )(1 )(2 )(3 )(4 )
     = <Gen-Iter <Gen-Map { e.Val = <Mul 3 e.Val> } <Gen-Range 0 5>>> : (0 )(3 )(6 )(9 )(12 )
     = <Gen-Reduce &Add 0 <Gen-Range 0 5>> : 10
+    = <Gen-Iter
+      <Fetch
+        <Gen-Pipe
+          { = <Gen-Range 1 3> }
+          { t.A = <Gen-Map { t.B = t.A t.B} <Gen-Range <Inc t.A> 4>> }
+          { t.A t.B = <Gen-Map { t.C = t.A t.B t.C} <Gen-Range <Inc t.B> 5>> }
+        >
+      >
+    > : (1 2 3 )(1 2 4 )(1 3 4 )(2 3 4 )
     = Done
 }
 ```
@@ -61,5 +70,7 @@ For more examples see [tests](./tests/) and documentation in the [Generators.ref
 - [x] Chain
 - [x] Map
 - [x] Reduce
+- [x] Pipe
+- [ ] Zip
 - [ ] MapAccum
 - [ ] Batched
