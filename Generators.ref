@@ -64,10 +64,57 @@ $ENTRY Gen-Iter {
     };
 }
 
+
+/* Take first n values from generator.
+
+Usage:
+  = <Gen-Take 3 <Gen-Range 1 10>> : (1 )(2 )(3 )
+*/
+$ENTRY Gen-Take {
+  t.Gen = <Gen-Take 1 t.Gen>;
+
+  s.N t.Gen = <Gen-Take (s.N) t.Gen>;
+
+  (e.N) t.Gen
+    = {
+      () = <Gen-TakeImpl (e.N ()) t.Gen>;
+      (e.N^ t.Ctx) = <Gen-TakeImpl (e.N t.Ctx) t.Gen>;
+    };
+}
+
+
+Gen-TakeImpl {
+  (0 t.Ctx) t.Gen = Gen-Stop;
+
+  (e.N t.Ctx) t.Gen
+    = <Apply t.Gen t.Ctx> : {
+      Gen-Stop = Gen-Stop;
+      t.NewCtx e.Next = (<Sub (e.N) 1> t.NewCtx) e.Next;
+    };
+}
+
+
 /* Auxiliary empty generator. */
 $ENTRY Gen-Empty {
   = { t.Ctx = Gen-Stop };
 }
+
+
+/* Yields terms from e-expression. */
+$ENTRY Gen-FromList {
+  e.List
+    = {
+      () = <Gen-FromListImpl e.List>;
+      ((e.List^)) = <Gen-FromListImpl e.List>;
+    };
+}
+
+
+Gen-FromListImpl {
+  /* empty */ = Gen-Stop;
+  (e.H) e.T = ((e.T)) e.H;
+}
+
 
 /* Python-like range generator. Yields integers from s.Start to s.Stop with step s.Step.
 
