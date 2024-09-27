@@ -1,0 +1,43 @@
+name: Build and test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Refal-5 compiler
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.local/share/refal-5-lambda
+          key: refal-5-lambda
+          restore-keys: refal-5-lambda
+
+      - name: Build Refal-5 compiler
+        run: |
+          if [ ! -d "$HOME/.local/share/refal-5-lambda/bin" ]; then
+            curl -L https://bmstu-iu9.github.io/refal-5-lambda/setup.bash | bash
+          fi
+
+      - name: Set env vars
+        run: |
+          echo "$HOME/.local/share/refal-5-lambda/bin" >> $GITHUB_PATH
+          echo "RL_MODULE_PATH=~/.local/share/refal-5-lambda/lib" >> $GITHUB_ENV
+
+      - name: Run tests
+        run: |
+          ./tests/test.sh
