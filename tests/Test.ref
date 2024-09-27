@@ -9,7 +9,11 @@ $EXTERN
   Gen-Chain,
   Gen-Map,
   Gen-Reduce,
-  Gen-Pipe;
+  Gen-Pipe,
+  Gen-Take,
+  Gen-FromList,
+  Gen-Empty,
+  Gen-ChopHead;
 
 
 *$FROM LibraryEx
@@ -28,6 +32,9 @@ $ENTRY Go {
     <Test-Gen-Map>
     <Test-Gen-Reduce>
     <Test-Gen-Pipe>
+    <Test-Gen-Take>
+    <Test-Gen-FromList>
+    <Test-Gen-ChopHead>
   >
 }
 
@@ -319,5 +326,52 @@ Test-Gen-Pipe {
         >
       >)
       (1 2 3 )(1 2 4 )(1 3 4 )(2 3 4 )
+    >;
+}
+
+
+Test-Gen-Take {
+  = <Prout Test-Gen-Take>
+    <Assert
+      (<Gen-Iter <Gen-Take <Gen-Range>>>)
+      (0 )
+    >
+    <Assert
+      (<Gen-Iter <Gen-Take 5 <Gen-Range>>>)
+      (0 )(1 )(2 )(3 )(4 )
+    >
+    <Assert
+      (<Gen-Iter <Gen-Take 5 <Gen-Range 0 3>>>)
+      (0 )(1 )(2 )
+    >
+    <Assert
+      (<Gen-Iter <Gen-Take 0 <Gen-Range>>>)
+      /* empty */
+    >;
+}
+
+
+Test-Gen-FromList {
+  = <Prout Test-Gen-FromList>
+    <Assert
+      (<Gen-Iter <Gen-FromList (1 )(2 )(3 )(4 )(5 )>>)
+      (1 )(2 )(3 )(4 )(5 )
+    >
+    <Assert
+      (<Gen-Iter <Gen-FromList /* empty */>>)
+      /* empty */
+    >;
+}
+
+
+Test-Gen-ChopHead {
+  = <Prout Test-Gen-FromList>
+    <Assert
+      (<{ t.H t.T = Head t.H Tail <Gen-Iter t.T> } <Gen-ChopHead <Gen-Range 0 5>>>)
+      Head 0 Tail (1 )(2 )(3 )(4 )
+    >
+    <Assert
+      (<{ t.H t.T = Head t.H Tail <Gen-Iter t.T> } <Gen-ChopHead <Gen-Empty>>>)
+      Head Gen-Stop Tail
     >;
 }
