@@ -11,7 +11,9 @@ $EXTERN
   Gen-Reduce,
   Gen-Pipe,
   Gen-Take,
-  Gen-FromList;
+  Gen-FromList,
+  Gen-Empty,
+  Gen-ChopHead;
 
 
 *$FROM LibraryEx
@@ -32,6 +34,7 @@ $ENTRY Go {
     <Test-Gen-Pipe>
     <Test-Gen-Take>
     <Test-Gen-FromList>
+    <Test-Gen-ChopHead>
   >
 }
 
@@ -357,5 +360,18 @@ Test-Gen-FromList {
     <Assert
       (<Gen-Iter <Gen-FromList /* empty */>>)
       /* empty */
+    >;
+}
+
+
+Test-Gen-ChopHead {
+  = <Prout Test-Gen-FromList>
+    <Assert
+      (<{ t.H t.T = Head t.H Tail <Gen-Iter t.T> } <Gen-ChopHead <Gen-Range 0 5>>>)
+      Head 0 Tail (1 )(2 )(3 )(4 )
+    >
+    <Assert
+      (<{ t.H t.T = Head t.H Tail <Gen-Iter t.T> } <Gen-ChopHead <Gen-Empty>>>)
+      Head Gen-Stop Tail
     >;
 }

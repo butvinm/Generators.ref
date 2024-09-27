@@ -387,3 +387,24 @@ Gen-DoPipe {
         };
     };
 }
+
+
+/* Get first item from a generator and returns new generator that starts from this value.
+
+Effectively, split a generator into head and tail.
+
+Usage:
+  = <Gen-ChopHead <Gen-Range 0 5>> : 0 <Gen-Range 1 5>
+*/
+$ENTRY Gen-ChopHead {
+  t.Gen
+    = <Apply t.Gen ()> : {
+      Gen-Stop = Gen-Stop <Gen-Empty>;
+
+      t.Ctx e.Next
+        = e.Next {
+          () = <Apply t.Gen t.Ctx>;
+          t.Ctx^ = <Apply t.Gen t.Ctx>;
+        };
+    };
+}

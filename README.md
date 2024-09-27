@@ -35,7 +35,7 @@ Most of the functions return a new generator so you can chain them together. Whe
 
 ```refal
 *$FROM Generators.ref
-$EXTERN Gen-Iter, Gen-Range, Gen-Filter, Gen-TakeWhile, Gen-Filter, Gen-DropWhile, Gen-Chain, Gen-Map, Gen-Reduce;
+$EXTERN Gen-Iter, Gen-Range, Gen-Filter, /* ... */;
 
 $ENTRY Go {
     = <Gen-Iter <Gen-Range 0 10 2>> : (0 )(2 )(4 )(6 )(8 )
@@ -55,6 +55,7 @@ $ENTRY Go {
     > : (1 2 3 )(1 2 4 )(1 3 4 )(2 3 4 )
     = <Gen-Iter <Gen-Take 5 <Gen-Range>>> : (0 )(1 )(2 )(3 )(4 )
     = <Gen-Iter <Gen-FromList (1 )(2 )(3 )(4 )(5 )>> : (1 )(2 )(3 )(4 )(5 )
+    = <Gen-ChopHead <Gen-Range 0 5>> : 1 <Gen-Range 1 5>
     = Done
 }
 ```
@@ -75,6 +76,7 @@ For more examples see [tests](./tests/) and documentation in the [Generators.ref
 - [x] Pipe
 - [x] Take
 - [x] FromList
+- [x] ChopHead
 - [ ] Zip
 - [ ] MapAccum
 - [ ] Batched
