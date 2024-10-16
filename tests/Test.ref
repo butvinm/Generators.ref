@@ -1,6 +1,7 @@
 *$FROM Generators.ref
 $EXTERN
   Gen-Iter,
+  Gen-IterFlat,
   Gen-Range,
   Gen-Filter,
   Gen-TakeWhile,
@@ -24,6 +25,7 @@ $ENTRY Go {
   = <Map
     { Success = ; Fail = <Exit 1>; }
     <Test-Gen-Iter>
+    <Test-Gen-IterFlat>
     <Test-Gen-Range>
     <Test-Gen-TakeWhile>
     <Test-Gen-Filter>
@@ -100,6 +102,19 @@ Test-Gen-Iter {
     <Assert
       (<Gen-Iter (&FibBounded 21) (3 5)>)
       (8)(13)(21)
+    >
+}
+
+
+Test-Gen-IterFlat {
+  = <Prout Test-Gen-IterFlat>
+    <Assert
+      (<Gen-IterFlat (&FibBounded 13)>)
+      1 2 3 5 8 13
+    >
+    <Assert
+      (<Gen-IterFlat (&FibBounded 21) (3 5)>)
+      8 13 21
     >
 }
 

@@ -48,7 +48,9 @@ Example:
 $EXTERN Apply;
 
 
-/* Expands generator to an object expression.
+/* Expands generator to a list of wrapped values.
+
+Each yielded value is wrapped in a pair of parentheses.
 
 Usage:
   = <Gen-Iter &Fib> : 1 1 2 3 5 8 13
@@ -61,6 +63,25 @@ $ENTRY Gen-Iter {
     = <Apply t.Gen t.Ctx> : {
       Gen-Stop = ;
       t.NewCtx e.Next = (e.Next) <Gen-Iter t.Gen t.NewCtx>;
+    };
+}
+
+
+/* Expands generator to a list of values.
+
+As opposed to Gen-Iter, each yielded value is not wrapped in parentheses.
+
+Usage:
+  = <Gen-Iter &Fib> : 1 1 2 3 5 8 13
+  = <Gen-Iter &Fib (3 5)> : 8 13
+*/
+$ENTRY Gen-IterFlat {
+  t.Gen = <Gen-IterFlat t.Gen ()>;
+
+  t.Gen t.Ctx
+    = <Apply t.Gen t.Ctx> : {
+      Gen-Stop = ;
+      t.NewCtx e.Next = e.Next <Gen-IterFlat t.Gen t.NewCtx>;
     };
 }
 

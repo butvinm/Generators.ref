@@ -38,6 +38,7 @@ Most of the functions return a new generator so you can chain them together. Whe
 $EXTERN Gen-Iter, Gen-Range, Gen-Filter, /* ... */;
 
 $ENTRY Go {
+    = <Gen-IterFlat <Gen-Range 0 10 2>> : 0 2 4 6 8
     = <Gen-Iter <Gen-Range 0 10 2>> : (0 )(2 )(4 )(6 )(8 )
     = <Gen-Iter <Gen-TakeWhile <LessThan 5> <Gen-Range 0 10>>> : (0 )(1 )(2 )(3 )(4 )
     = <Gen-Iter <Gen-Filter &IsEven <Gen-Range 0 10>>> : (0 )(2 )(4 )(6 )(8 )
@@ -66,6 +67,7 @@ For more examples see [tests](./tests/) and documentation in the [Generators.ref
 ## Roadmap
 
 - [x] Iter
+- [x] IterFlat
 - [x] Range
 - [x] TakeWhile
 - [x] DropWhile
