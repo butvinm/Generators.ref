@@ -1,5 +1,7 @@
 # Generators library for [Refal-5λ](https://github.com/bmstu-iu9/refal-5-lambda)
 
+This library provides a set of utilities for generating sequences of values in Refal-5λ, enabling lazy iteration, filtering, generation and transformation of data.
+
 ## Installation
 
 Just copy the Generators.ref file to your project, or if you prefer, include only the functions you need directly in your code.
