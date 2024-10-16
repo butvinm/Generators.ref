@@ -28,15 +28,15 @@ THE SOFTWARE.
 Generator function interface:
 
   MyGenerator {
-    () = t.InitCtx t.Next;
-    t.Ctx = t.NewCtx t.Next;
+    () = t.InitCtx e.Next;
+    t.Ctx = t.NewCtx e.Next;
     t.Ctx = Gen-Stop;
   }
 
 Example:
 
   Fib {
-    () = (1 1) 1;
+    () = (0 1) 1;
     (8 13) = Gen-Stop;
     (s.PP s.P)
       = <Add s.PP s.P> : s.Next
@@ -45,14 +45,16 @@ Example:
 */
 
 *$FROM LibraryEx
-$EXTERN Apply;
+$EXTERN Apply, Reduce, MapAccum, UnBracket;
 
 
-/* Expands generator to an object expression.
+/* Expands generator to a list of wrapped values.
+
+Each yielded value is wrapped in a pair of parentheses.
 
 Usage:
-  = <Gen-Iter &Fib> : 1 1 2 3 5 8 13
-  = <Gen-Iter &Fib (3 5)> : 8 13
+  = <Gen-Iter &Fib> : (1 )(1 )(2 )(3 )(5 )(8 )(13 )
+  = <Gen-Iter &Fib (3 5)> : (8 )(13 )
 */
 $ENTRY Gen-Iter {
   t.Gen = <Gen-Iter t.Gen ()>;
@@ -61,6 +63,25 @@ $ENTRY Gen-Iter {
     = <Apply t.Gen t.Ctx> : {
       Gen-Stop = ;
       t.NewCtx e.Next = (e.Next) <Gen-Iter t.Gen t.NewCtx>;
+    };
+}
+
+
+/* Expands generator to a list of values.
+
+Similar to Gen-Iter, but values are not wrapped in parentheses.
+
+Usage:
+  = <Gen-FaltIter &Fib> : 1 1 2 3 5 8 13
+  = <Gen-FaltIter &Fib (3 5)> : 8 13
+*/
+$ENTRY Gen-FlatIter {
+  t.Gen = <Gen-FlatIter t.Gen ()>;
+
+  t.Gen t.Ctx
+    = <Apply t.Gen t.Ctx> : {
+      Gen-Stop = ;
+      t.NewCtx e.Next = e.Next <Gen-FlatIter t.Gen t.NewCtx>;
     };
 }
 
@@ -153,9 +174,16 @@ Gen-RangeImpl {
 
   ((e.Start) (e.Stop) e.Step)
     = <Add (e.Start) e.Step> : e.Next
-    = <Compare (e.Start) e.Stop> : {
-      '-' = ((e.Next) (e.Stop) e.Step) e.Start;
-      e._ = Gen-Stop;
+    = <Compare (e.Step) 0> : {
+      '+' = <Compare (e.Start) e.Stop> : {
+        '-' = ((e.Next) (e.Stop) e.Step) e.Start;
+        e._ = Gen-Stop;
+      };
+
+      '-' = <Compare (e.Start) e.Stop> : {
+        '+' = ((e.Next) (e.Stop) e.Step) e.Start;
+        e._ = Gen-Stop;
+      };
     };
 }
 
@@ -406,5 +434,72 @@ $ENTRY Gen-ChopHead {
           () = <Apply t.Gen t.Ctx>;
           t.Ctx^ = <Apply t.Gen t.Ctx>;
         };
+    };
+}
+
+
+/* Combine multiple generators into one generator that yields tuples of values from each generator, like python 'zip'.
+
+Generator stops when any of the generators stops.
+
+Usage:
+  = <Gen-Iter
+    <Gen-Zip
+      <Gen-Range 1 5>
+      <Gen-Range 6 10>
+    >
+  > : ((1 ) (6 ))((2 ) (7 ))((3 ) (8 ))((4 ) (9 ))((5 ) (10 ))
+  = <Gen-Iter
+    <Gen-Zip
+      <Gen-Range 1 5>
+      <Gen-Range 1 3>
+    >
+  > : ((1 ) (1 ))((2 ) (2 ))((3 ) (3 ))
+*/
+$ENTRY Gen-Zip {
+  = <Gen-Empty>;
+
+  e.Gens
+    = {
+      ()
+        = <UnBracket
+          <Reduce
+            {
+              (Gen-Stop /* empty */) t.Gen = (Gen-Stop /* empty */);
+
+              ((e.NewCtxs) e.Nexts) t.Gen
+                = <Apply t.Gen ()> : {
+                  Gen-Stop = (Gen-Stop /* empty */);
+                  t.NewCtx e.Next = ((e.NewCtxs t.NewCtx) e.Nexts (e.Next));
+                };
+            }
+            (() /* empty */)
+            e.Gens
+          >
+        >;
+
+      (e.Ctxs)
+        = <MapAccum
+          {
+            (t.Ctx e.RestCtx) t.Gen = (e.RestCtx) (t.Gen t.Ctx);
+          }
+          (e.Ctxs)
+          e.Gens
+        > : t._ e.GenWithCtxs
+        = <UnBracket
+          <Reduce
+            {
+              (Gen-Stop /* empty */) (t.Gen t.Ctx) = (Gen-Stop /* empty */);
+
+              ((e.NewCtxs) e.Nexts) (t.Gen t.Ctx)
+                = <Apply t.Gen t.Ctx> : {
+                  Gen-Stop = (Gen-Stop /* empty */);
+                  t.NewCtx e.Next = ((e.NewCtxs t.NewCtx) e.Nexts (e.Next));
+                };
+            }
+            (() /* empty */)
+            e.GenWithCtxs
+          >
+        >;
     };
 }

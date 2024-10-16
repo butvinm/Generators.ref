@@ -1,6 +1,7 @@
 *$FROM Generators.ref
 $EXTERN
   Gen-Iter,
+  Gen-FlatIter,
   Gen-Range,
   Gen-Filter,
   Gen-TakeWhile,
@@ -13,7 +14,8 @@ $EXTERN
   Gen-Take,
   Gen-FromList,
   Gen-Empty,
-  Gen-ChopHead;
+  Gen-ChopHead,
+  Gen-Zip;
 
 
 *$FROM LibraryEx
@@ -24,6 +26,7 @@ $ENTRY Go {
   = <Map
     { Success = ; Fail = <Exit 1>; }
     <Test-Gen-Iter>
+    <Test-Gen-FlatIter>
     <Test-Gen-Range>
     <Test-Gen-TakeWhile>
     <Test-Gen-Filter>
@@ -35,6 +38,7 @@ $ENTRY Go {
     <Test-Gen-Take>
     <Test-Gen-FromList>
     <Test-Gen-ChopHead>
+    <Test-Gen-Zip>
   >
 }
 
@@ -49,17 +53,8 @@ Assert {
 }
 
 
-Fib {
-   = (1 1) 1;
-
-  (s.PP s.P)
-    = <Add s.PP s.P> : s.Next
-    = (s.P s.Next) s.Next;
-}
-
-
 FibBounded {
-  s.Bound () = (1 1) 1;
+  s.Bound () = (0 1) 1;
 
   s.Bound (s.PP s.P), <Compare s.Bound s.P> : '+'
     = <Add s.PP s.P> : s.Next
@@ -95,11 +90,28 @@ Test-Gen-Iter {
   = <Prout Test-Gen-Iter>
     <Assert
       (<Gen-Iter (&FibBounded 13)>)
-      (1)(2)(3)(5)(8)(13)
+      (1)(1)(2)(3)(5)(8)(13)
     >
     <Assert
       (<Gen-Iter (&FibBounded 21) (3 5)>)
       (8)(13)(21)
+    >
+}
+
+
+Test-Gen-FlatIter {
+  = <Prout Test-Gen-FlatIter>
+    <Assert
+      (<Gen-FlatIter (&FibBounded 13)>)
+      1 1 2 3 5 8 13
+    >
+    <Assert
+      (<Gen-FlatIter (&FibBounded 21) (3 5)>)
+      8 13 21
+    >
+    <Assert
+      (<Gen-FlatIter <Gen-Range 0 5>>)
+      0 1 2 3 4
     >
 }
 
@@ -113,6 +125,14 @@ Test-Gen-Range {
     <Assert
       (<Gen-Iter <Gen-Range 0 5>>)
       (0)(1)(2)(3)(4)
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range ('-' 5) (5 ) 1>>)
+      ('-' 5)('-' 4)('-' 3)('-' 2)('-' 1)(0 )(1 )(2 )(3 )(4 )
+    >
+    <Assert
+      (<Gen-Iter <Gen-Range (5) (0) '-' 1>>)
+      (5)(4)(3)(2)(1)
     >
     <Assert
       (<Gen-Iter <Gen-Range 0 10 2>>)
@@ -374,4 +394,55 @@ Test-Gen-ChopHead {
       (<{ t.H t.T = Head t.H Tail <Gen-Iter t.T> } <Gen-ChopHead <Gen-Empty>>>)
       Head Gen-Stop Tail
     >;
+}
+
+
+Test-Gen-Zip {
+  = <Prout Test-Gen-Zip>
+    <Assert
+      (<Gen-Iter <Gen-Zip>>)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Range 0 5>
+        >
+      >)
+      ((0 ) )((1 ) )((2 ) )((3 ) )((4 ) )
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Range 0 5>
+          <Gen-Range 5 10>
+        >
+      >)
+      ((0 ) (5 ) )((1 ) (6 ) )((2 ) (7 ) )((3 ) (8 ) )((4 ) (9 ) )
+    >
+    <Assert
+      (<Gen-FlatIter
+        <Gen-Zip
+          <Gen-Range 0 5>
+          <Gen-Range 5 10>
+        >
+      >)
+      (0 ) (5 ) (1 ) (6 ) (2 ) (7 ) (3 ) (8 ) (4 ) (9 )
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Range 0 5>
+          <Gen-Range 5 7>
+        >
+      >)
+      ((0 ) (5 ) )((1 ) (6 ) )
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Empty>
+          <Gen-Empty>
+        >
+      >)
+    >
 }
