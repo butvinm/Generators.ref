@@ -45,7 +45,7 @@ Example:
 */
 
 *$FROM LibraryEx
-$EXTERN Apply;
+$EXTERN Apply, Reduce, MapAccum, UnBracket;
 
 
 /* Expands generator to a list of wrapped values.
@@ -427,5 +427,72 @@ $ENTRY Gen-ChopHead {
           () = <Apply t.Gen t.Ctx>;
           t.Ctx^ = <Apply t.Gen t.Ctx>;
         };
+    };
+}
+
+
+/* Combine multiple generators into one generator that yields tuples of values from each generator, like python 'zip'.
+
+Generator stops when any of the generators stops.
+
+Usage:
+  = <Gen-Iter
+    <Gen-Zip
+      <Gen-Range 1 5>
+      <Gen-Range 6 10>
+    >
+  > : ((1 ) (6 ))((2 ) (7 ))((3 ) (8 ))((4 ) (9 ))((5 ) (10 ))
+  = <Gen-Iter
+    <Gen-Zip
+      <Gen-Range 1 5>
+      <Gen-Range 1 3>
+    >
+  > : ((1 ) (1 ))((2 ) (2 ))((3 ) (3 ))
+*/
+$ENTRY Gen-Zip {
+  = <Gen-Empty>;
+
+  e.Gens
+    = {
+      ()
+        = <UnBracket
+          <Reduce
+            {
+              (Gen-Stop /* empty */) t.Gen = (Gen-Stop /* empty */);
+
+              ((e.NewCtxs) e.Nexts) t.Gen
+                = <Apply t.Gen ()> : {
+                  Gen-Stop = (Gen-Stop /* empty */);
+                  t.NewCtx e.Next = ((e.NewCtxs t.NewCtx) e.Nexts (e.Next));
+                };
+            }
+            (() /* empty */)
+            e.Gens
+          >
+        >;
+
+      (e.Ctxs)
+        = <MapAccum
+          {
+            (t.Ctx e.RestCtx) t.Gen = (e.RestCtx) (t.Gen t.Ctx);
+          }
+          (e.Ctxs)
+          e.Gens
+        > : t._ e.GenWithCtxs
+        = <UnBracket
+          <Reduce
+            {
+              (Gen-Stop /* empty */) (t.Gen t.Ctx) = (Gen-Stop /* empty */);
+
+              ((e.NewCtxs) e.Nexts) (t.Gen t.Ctx)
+                = <Apply t.Gen t.Ctx> : {
+                  Gen-Stop = (Gen-Stop /* empty */);
+                  t.NewCtx e.Next = ((e.NewCtxs t.NewCtx) e.Nexts (e.Next));
+                };
+            }
+            (() /* empty */)
+            e.GenWithCtxs
+          >
+        >;
     };
 }

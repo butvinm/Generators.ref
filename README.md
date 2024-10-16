@@ -57,6 +57,7 @@ $ENTRY Go {
     = <Gen-Iter <Gen-Take 5 <Gen-Range>>> : (0 )(1 )(2 )(3 )(4 )
     = <Gen-Iter <Gen-FromList (1 )(2 )(3 )(4 )(5 )>> : (1 )(2 )(3 )(4 )(5 )
     = <Gen-ChopHead <Gen-Range 0 5>> : 1 <Gen-Range 1 5>
+    = <Gen-Zip <Gen-Range 0 5> <Gen-Range 5 10>> : ((0 ) (5 ))((1 ) (6 ))((2 ) (7 ))((3 ) (8 ))((4 ) (9 ))
     = Done
 }
 ```
@@ -79,6 +80,6 @@ For more examples see [tests](./tests/) and documentation in the [Generators.ref
 - [x] Take
 - [x] FromList
 - [x] ChopHead
-- [ ] Zip
+- [x] Zip
 - [ ] MapAccum
 - [ ] Batched

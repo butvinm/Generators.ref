@@ -14,7 +14,8 @@ $EXTERN
   Gen-Take,
   Gen-FromList,
   Gen-Empty,
-  Gen-ChopHead;
+  Gen-ChopHead,
+  Gen-Zip;
 
 
 *$FROM LibraryEx
@@ -37,6 +38,7 @@ $ENTRY Go {
     <Test-Gen-Take>
     <Test-Gen-FromList>
     <Test-Gen-ChopHead>
+    <Test-Gen-Zip>
   >
 }
 
@@ -389,4 +391,46 @@ Test-Gen-ChopHead {
       (<{ t.H t.T = Head t.H Tail <Gen-Iter t.T> } <Gen-ChopHead <Gen-Empty>>>)
       Head Gen-Stop Tail
     >;
+}
+
+
+Test-Gen-Zip {
+  = <Prout Test-Gen-Zip>
+    <Assert
+      (<Gen-Iter <Gen-Zip>>)
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Range 0 5>
+        >
+      >)
+      ((0 ) )((1 ) )((2 ) )((3 ) )((4 ) )
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Range 0 5>
+          <Gen-Range 5 10>
+        >
+      >)
+      ((0 ) (5 ) )((1 ) (6 ) )((2 ) (7 ) )((3 ) (8 ) )((4 ) (9 ) )
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Range 0 5>
+          <Gen-Range 5 7>
+        >
+      >)
+      ((0 ) (5 ) )((1 ) (6 ) )
+    >
+    <Assert
+      (<Gen-Iter
+        <Gen-Zip
+          <Gen-Empty>
+          <Gen-Empty>
+        >
+      >)
+    >
 }
